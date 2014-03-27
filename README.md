@@ -35,7 +35,7 @@ Like when python itself crashes, gets stuck in some C extension, or you want to 
 I injected a change to a local var into a function and it's not showing up!
 ---------------------------------------------------------------------------
 
-This is a known limitation. Things like `inject('var = 2')` won't work, but `inject('var[1] = 1337') should. This is because most of the time, python internally uses a fast path for looking up local variables that doesn't actually perform the dictionary lookup in `locals()`. In general, code you inject into processes with pyringe is very different from a normal python function call.
+This is a known limitation. Things like `inject('var = 2')` won't work, but `inject('var[1] = 1337')` should. This is because most of the time, python internally uses a fast path for looking up local variables that doesn't actually perform the dictionary lookup in `locals()`. In general, code you inject into processes with pyringe is very different from a normal python function call.
 
 How do I use it?
 ----------------
