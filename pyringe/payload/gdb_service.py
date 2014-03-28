@@ -60,6 +60,7 @@ class GdbCache(object):
 
   @staticmethod
   def Refresh():
+    """looks up symbols within the inferior and caches their names / values."""
     GdbCache.DICT = gdb.lookup_type('PyDictObject').pointer()
     GdbCache.TYPE = gdb.lookup_type('PyTypeObject').pointer()
     interp_head_name = GdbCache.FuzzySymbolLookup('interp_head')
