@@ -55,18 +55,27 @@ class GdbCache(object):
   DICT = None
   TYPE = None
   INTERP_HEAD = None
+  PENDINGBUSY = None
+  PENDINGCALLS_TO_DO = None
 
   @staticmethod
   def Refresh():
     GdbCache.DICT = gdb.lookup_type('PyDictObject').pointer()
     GdbCache.TYPE = gdb.lookup_type('PyTypeObject').pointer()
-    GdbCache.INTERP_HEAD = GdbCache.FuzzyLookupInterpHead()
+    interp_head_name = GdbCache.FuzzySymbolLookup('interp_head')
+    if interp_head_name:
+      GdbCache.INTERP_HEAD = gdb.parse_and_eval(interp_head_name)
+    else:
+      # As a last resort, ask the inferior about it.
+      GdbCache.INTERP_HEAD = gdb.parse_and_eval('PyInterpreterState_Head()')
+    GdbCache.PENDINGBUSY = GdbCache.FuzzySymbolLookup('pendingbusy')
+    GdbCache.PENDINGCALLS_TO_DO = GdbCache.FuzzySymbolLookup('pendingcalls_to_do')
 
   @staticmethod
-  def FuzzyLookupInterpHead():
-    symbol_name = 'interp_head'
+  def FuzzySymbolLookup(symbol_name):
     try:
-      return gdb.parse_and_eval(symbol_name)
+      gdb.parse_and_eval(symbol_name)
+      return symbol_name
     except gdb.error as err:
       # No symbol in current context. We might be dealing with static symbol
       # disambiguation employed by compilers. For example, on debian's current
@@ -87,9 +96,8 @@ class GdbCache(object):
       mangled_name = re.search(r'\**(\S+);$', listing, re.MULTILINE)
       try:
         if mangled_name:
-          return gdb.parse_and_eval('\'%s\'' % mangled_name.group(1))
-        # Last resort: ask the inferior for it
-        return gdb.parse_and_eval('PyInterpreterState_Head()')
+          gdb.parse_and_eval('\'%s\'' % mangled_name.group(1))
+        return '\'%s\'' % mangled_name
       except gdb.error:
         # We could raise this, but the original exception will likely describe
         # the problem better
@@ -545,8 +553,8 @@ class GdbService(object):
     self.EnsureGdbPosition(position[0], position[1], None)
     self.ClearBreakpoints()
     self._AddThreadSpecificBreakpoint(position)
-    gdb.parse_and_eval('pendingcalls_to_do = 1')
-    gdb.parse_and_eval('pendingbusy = 1')
+    gdb.parse_and_eval('%s = 1' % GdbCache.PENDINGCALLS_TO_DO)
+    gdb.parse_and_eval('%s = 1' % GdbCache.PENDINGBUSY)
     try:
       # We're "armed", risk the blocking call to Continue
       self.Continue(position)
@@ -558,7 +566,7 @@ class GdbService(object):
         raise RuntimeError('Gdb is not acting as expected, is it being run in '
                            'async mode?')
     finally:
-      gdb.parse_and_eval('pendingbusy = 0')
+      gdb.parse_and_eval('%s = 0' % GdbCache.PENDINGBUSY)
     self.Call(position, call)
 
   def _AddThreadSpecificBreakpoint(self, position):
