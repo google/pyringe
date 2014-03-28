@@ -98,7 +98,7 @@ class GdbCache(object):
       try:
         if mangled_name:
           gdb.parse_and_eval('\'%s\'' % mangled_name.group(1))
-        return '\'%s\'' % mangled_name
+        return '\'%s\'' % mangled_name.group(1)
       except gdb.error:
         # We could raise this, but the original exception will likely describe
         # the problem better
