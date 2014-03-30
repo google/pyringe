@@ -6,7 +6,7 @@ a just a few small guidelines you need to follow.
 
 ## Contributor License Agreement ##
 
-Contributions to any Google project must be accompanied by a Contributor
+Contributions to any project owned by Google must be accompanied by a Contributor
 License Agreement.  This is not a copyright **assignment**, it simply gives
 Google permission to use and redistribute your contributions as part of the
 project.
