@@ -40,7 +40,8 @@ This is a known limitation. Things like `inject('var = 2')` won't work, but `inj
 How do I use it?
 ----------------
 
-You can start the debugger by executing the following:
+You can start the debugger by executing `python -m pyringe`. Alternatively:
+
 
 ```python
 import pyringe
