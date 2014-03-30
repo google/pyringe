@@ -1,10 +1,17 @@
+**DISCLAIMER: This is not an official google project, this is just something I wrote while at Google.**
+
 Pyringe
 =======
 
-What is it?
------------
+What this is
+------------
 
 Pyringe is a python debugger capable of attaching to running processes,  inspecting their state and even of injecting python code into them while they're running. With pyringe, you can list threads, get tracebacks, inspect locals/globals/builtins of running functions, all without having to prepare your program for it.
+
+What this is not
+----------------
+
+A "Google project". It's my internship project that got open-sourced. Sorry for the confusion.
 
 What do I need?
 ---------------
