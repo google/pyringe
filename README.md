@@ -16,7 +16,7 @@ A "Google project". It's my internship project that got open-sourced. Sorry for 
 What do I need?
 ---------------
 
-Pyringe internally uses gdb to do a lot of its heavy lifting, so you will need a fairly recent build of gdb (version 7 onwards, and only if gdb was configured with `--with-python`). You will also need the symbols for whatever build of python you're running.  
+Pyringe internally uses gdb to do a lot of its heavy lifting, so you will need a fairly recent build of gdb (version 7.4 onwards, and only if gdb was configured with `--with-python`). You will also need the symbols for whatever build of python you're running.  
 On Fedora, the package you're looking for is `python-debuginfo`, on Debian it's called `python2.7-dbg` (adjust according to version). Arch Linux users: see [issue #5][].  
 Having [Colorama](https://pypi.python.org/pypi/colorama) will get you output in boldface, but it's optional.
 
