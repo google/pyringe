@@ -44,7 +44,7 @@ _GDB_STARTUP_FILES = [
     'importsetup.py',
     'gdb_service.py',
 ]
-_GDB_ARGS = ['gdb', '--nh', '--nw', '--quiet', '--batch-silent']
+_GDB_ARGS = ['gdb', '--nw', '--quiet', '--batch-silent']
 
 
 def _SymbolFilePath():
@@ -126,8 +126,16 @@ class GdbProxy(object):
   implemented on top of this if it is to be available.
   """
 
+  firstrun = True
+
   def __init__(self, args=None, arch='i386:x86-64'):
     super(GdbProxy, self).__init__()
+    gdb_version = GdbProxy.Version()
+    if gdb_version < (7, 4, None) and GdbProxy.firstrun:
+      # The user may have a custom-built version, so we only warn them
+      logging.warning('Your version of gdb is unsupported (< 7.4), '
+                      'proceed with caution.')
+      GdbProxy.firstrun = False
 
     # Due to a design flaw in the C part of the gdb python API, setting the
     # target architecture from within a running script doesn't work, so we have
@@ -136,6 +144,13 @@ class GdbProxy(object):
                ['--eval-command', 'set architecture ' + arch] +
                ['--command=' + os.path.join(PAYLOAD_DIR, fname)
                 for fname in _GDB_STARTUP_FILES])
+
+    # Add version-specific args
+    if gdb_version >= (7, 6, 1):
+      # We want as little interference from user settings as possible,
+      # but --nh was only introduced in 7.6.1
+      arglist.append('--nh')
+
     if args:
       arglist.extend(args)
 
@@ -205,6 +220,37 @@ class GdbProxy(object):
   @property
   def is_running(self):
     return self._process.poll() is None
+
+  @staticmethod
+  def Version():
+    """Gets the version of gdb as a 3-tuple.
+
+    The gdb devs seem to think it's a good idea to make --version
+    output multiple lines of welcome text instead of just the actual version,
+    so we ignore everything it outputs after the first line.
+    Returns:
+      The installed version of gdb in the form
+      (<major>, <minor or None>, <micro or None>)
+      gdb 7.7 would hence show up as version (7,7)
+    """
+    output = subprocess.check_output(['gdb', '--version']).split('\n')[0]
+    # Example output (Arch linux):
+    # GNU gdb (GDB) 7.7
+    # Example output (Debian sid):
+    # GNU gdb (GDB) 7.6.2 (Debian 7.6.2-1)
+
+    version = output.split()[3].split('.')
+    # There must be a major version number
+    major = int(version[0])
+    try:
+      minor = int(version[1])
+    except IndexError, ValueError:
+      minor = None
+    try:
+      micro = int(version[2])
+    except IndexError, ValueError:
+      micro = None
+    return (major, minor, micro)
 
   # On JSON handling:
   # The python2 json module ignores the difference between unicode and str
