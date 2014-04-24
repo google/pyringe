@@ -244,11 +244,11 @@ class GdbProxy(object):
     major = int(version[0])
     try:
       minor = int(version[1])
-    except IndexError, ValueError:
+    except (IndexError, ValueError):
       minor = None
     try:
       micro = int(version[2])
-    except IndexError, ValueError:
+    except (IndexError, ValueError):
       micro = None
     return (major, minor, micro)
 
