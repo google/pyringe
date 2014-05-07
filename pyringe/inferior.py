@@ -27,6 +27,7 @@ import functools
 import json
 import logging
 import os
+import re
 import select
 import signal
 import subprocess
@@ -133,7 +134,7 @@ class GdbProxy(object):
     gdb_version = GdbProxy.Version()
     if gdb_version < (7, 4, None) and GdbProxy.firstrun:
       # The user may have a custom-built version, so we only warn them
-      logging.warning('Your version of gdb is unsupported (< 7.4), '
+      logging.warning('Your version of gdb may be unsupported (< 7.4), '
                       'proceed with caution.')
       GdbProxy.firstrun = False
 
@@ -238,18 +239,31 @@ class GdbProxy(object):
     # GNU gdb (GDB) 7.7
     # Example output (Debian sid):
     # GNU gdb (GDB) 7.6.2 (Debian 7.6.2-1)
+    # Example output (Debian wheezy):
+    # GNU gdb (GDB) 7.4.1-debian
 
-    version = output.split()[3].split('.')
-    # There must be a major version number
-    major = int(version[0])
-    try:
-      minor = int(version[1])
-    except (IndexError, ValueError):
-      minor = None
-    try:
-      micro = int(version[2])
-    except (IndexError, ValueError):
-      micro = None
+    # As we've seen in the examples above, versions may be named very liberally
+    # So we assume every part of that string may be the "real" version string
+    # and try to parse them all. This too isn't perfect (later strings will
+    # overwrite information gathered from previous ones), but it should be
+    # flexible enough for everything out there.
+    major = None
+    minor = None
+    micro = None
+    for potential_versionstring in output.split():
+      version = re.split('[^0-9]', potential_versionstring)
+      try:
+        major = int(version[0])
+      except (IndexError, ValueError):
+        pass
+      try:
+        minor = int(version[1])
+      except (IndexError, ValueError):
+        pass
+      try:
+        micro = int(version[2])
+      except (IndexError, ValueError):
+        pass
     return (major, minor, micro)
 
   # On JSON handling:
