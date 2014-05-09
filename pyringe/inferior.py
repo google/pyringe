@@ -241,6 +241,8 @@ class GdbProxy(object):
     # GNU gdb (GDB) 7.6.2 (Debian 7.6.2-1)
     # Example output (Debian wheezy):
     # GNU gdb (GDB) 7.4.1-debian
+    # Example output (centos 2.6.32):
+    # GNU gdb (GDB) Red Hat Enterprise Linux (7.2-56.el6)
 
     # As we've seen in the examples above, versions may be named very liberally
     # So we assume every part of that string may be the "real" version string
