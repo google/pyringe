@@ -60,9 +60,18 @@ class GdbCache(object):
 
   @staticmethod
   def Refresh():
-    """looks up symbols within the inferior and caches their names / values."""
-    GdbCache.DICT = gdb.lookup_type('PyDictObject').pointer()
-    GdbCache.TYPE = gdb.lookup_type('PyTypeObject').pointer()
+    """looks up symbols within the inferior and caches their names / values.
+
+    If debugging information is only partial, this method does its best to
+    find as much information as it can, validation can be done using
+    IsSymbolFileSane.
+    """
+    try:
+      GdbCache.DICT = gdb.lookup_type('PyDictObject').pointer()
+      GdbCache.TYPE = gdb.lookup_type('PyTypeObject').pointer()
+    except gdb.error as err:
+      # The symbol file we're using doesn't seem to provide type information.
+      pass
     interp_head_name = GdbCache.FuzzySymbolLookup('interp_head')
     if interp_head_name:
       GdbCache.INTERP_HEAD = gdb.parse_and_eval(interp_head_name)
@@ -89,15 +98,22 @@ class GdbCache(object):
       #
       # File <source_file>:
       # <Type><real_symbol_name>;
-      # We're only interested in <real_symbol_name>.
+      #
+      # Non-debugging symbols:
+      # 0x<address>  <real_symbol_name>
+
+      # We're only interested in <real_symbol_name>. The latter part
+      # ('Non-debugging symbols') is only relevant if debugging info is partial.
       listing = gdb.execute('info variables %s' % symbol_name, to_string=True)
       # sigh... We want whatever was in front of ;, but barring any *s.
       # If you are a compiler dev who mangles symbols using ';' and '*',
       # you deserve this breakage.
-      mangled_name = re.search(r'\**(\S+);$', listing, re.MULTILINE)
+      mangled_name = (re.search(r'\**(\S+);$', listing, re.MULTILINE)
+                      or re.search(r'^0x[0-9a-fA-F]+\s+(\S+)$', listing, re.MULTILINE))
+      if not mangled_name:
+        raise err
       try:
-        if mangled_name:
-          gdb.parse_and_eval('\'%s\'' % mangled_name.group(1))
+        gdb.parse_and_eval('\'%s\'' % mangled_name.group(1))
         return '\'%s\'' % mangled_name.group(1)
       except gdb.error:
         # We could raise this, but the original exception will likely describe
