@@ -74,6 +74,7 @@ class DebuggingConsole(code.InteractiveConsole):
                      'pyhelp': help,  # we shouldn't completely hide this
                      'attach': self.Attach,
                      'detach': self.Detach,
+                     'setarch': self.SetArchitecture,
                      'loadplugin': self.LoadCommandPlugin,
                      'quit': self.Quit,
                     }
@@ -161,6 +162,18 @@ class DebuggingConsole(code.InteractiveConsole):
     for plugin in self.plugins:
       plugin.position = None
     self.inferior.Reinit(None)
+
+  def SetArchitecture(self, arch):
+    """Set inferior target architecture
+
+    This is directly forwarded to gdb via its command line, so
+    possible values are defined by what the installed gdb supports.
+    Only takes effect after gdb has been restarted.
+
+    Args:
+      arch: The target architecture to set gdb to.
+    """
+    self.inferior.arch = arch
 
   def runcode(self, co):
     try:

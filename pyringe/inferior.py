@@ -129,7 +129,7 @@ class GdbProxy(object):
 
   firstrun = True
 
-  def __init__(self, args=None, arch='i386:x86-64'):
+  def __init__(self, args=None, arch=None):
     super(GdbProxy, self).__init__()
     gdb_version = GdbProxy.Version()
     if gdb_version < (7, 4, None) and GdbProxy.firstrun:
@@ -138,11 +138,13 @@ class GdbProxy(object):
                       'proceed with caution.')
       GdbProxy.firstrun = False
 
+    arglist = _GDB_ARGS
     # Due to a design flaw in the C part of the gdb python API, setting the
     # target architecture from within a running script doesn't work, so we have
     # to do this with a command line flag.
-    arglist = (_GDB_ARGS +
-               ['--eval-command', 'set architecture ' + arch] +
+    if arch:
+        arglist = arglist + ['--eval-command', 'set architecture ' + arch]
+    arglist = (arglist +
                ['--command=' + os.path.join(PAYLOAD_DIR, fname)
                 for fname in _GDB_STARTUP_FILES])
 
@@ -439,10 +441,11 @@ class Inferior(object):
   # frame_depth is the 'depth' (as measured from the outermost frame) of the
   # requested frame. A value of -1 will hence mean the most recent frame.
 
-  def __init__(self, pid, auto_symfile_loading=True):
+  def __init__(self, pid, auto_symfile_loading=True, architecture='i386:x86-64'):
     super(Inferior, self).__init__()
     self.position = self._Position(pid=pid, tid=None, frame_depth=-1)
     self._symbol_file = None
+    self.arch = architecture
     self.auto_symfile_loading = auto_symfile_loading
 
     # Inferior objects are created before the user ever issues the 'attach'
@@ -477,7 +480,7 @@ class Inferior(object):
         loaded by gdb.
     """
     self.ShutDownGdb()
-    self.__init__(pid, auto_symfile_loading)
+    self.__init__(pid, auto_symfile_loading, architecture=self.arch)
 
   @property
   def gdb(self):
@@ -495,20 +498,20 @@ class Inferior(object):
     """
     if self.attached:
       raise GdbProcessError('Gdb is already running.')
-    self._gdb = GdbProxy()
+    self._gdb = GdbProxy(arch=self.arch)
     self._gdb.Attach(self.position)
 
     if self.auto_symfile_loading:
       try:
         self.LoadSymbolFile()
       except (ProxyError, TimeoutError) as err:
-        self._gdb = GdbProxy()
+        self._gdb = GdbProxy(arch=self.arch)
         self._gdb.Attach(self.position)
         if not self.gdb.IsSymbolFileSane(self.position):
-          logging.warning('Failed to automatically load symbol file, some '
-                          'functionality will be unavailable until symbol file'
-                          ' is provided.')
-          logging.info(err.message)
+          logging.warning('Failed to automatically load a sane symbol file, '
+                          'most functionality will be unavailable until symbol'
+                          'file is provided.')
+          logging.debug(err.message)
 
   def ShutDownGdb(self):
     if self._gdb and self._gdb.is_running:
