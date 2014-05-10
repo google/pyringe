@@ -17,10 +17,11 @@ What do I need?
 ---------------
 
 Pyringe internally uses gdb to do a lot of its heavy lifting, so you will need a fairly recent build of gdb (version 7.4 onwards, and only if gdb was configured with `--with-python`). You will also need the symbols for whatever build of python you're running.  
-On Fedora, the package you're looking for is `python-debuginfo`, on Debian it's called `python2.7-dbg` (adjust according to version). Arch Linux users: see [issue #5][].  
+On Fedora, the package you're looking for is `python-debuginfo`, on Debian it's called `python2.7-dbg` (adjust according to version). Arch Linux users: see [issue #5][], Ubuntu users can only debug the `python-dbg` binary (see [issue #19][]).  
 Having [Colorama](https://pypi.python.org/pypi/colorama) will get you output in boldface, but it's optional.
 
 [issue #5]: https://github.com/google/pyringe/issues/5
+[issue #19]: https://github.com/google/pyringe/issues/19
 
 How do I get it?
 ----------------
