@@ -169,6 +169,7 @@ class GdbProxy(object):
     self._outfile_r = open(outfile_w.name)
     self._errfile_r = open(errfile_w.name)
 
+    logging.debug('Starting new gdb process...')
     self._process = subprocess.Popen(
         bufsize=0,
         args=arglist,
@@ -207,7 +208,7 @@ class GdbProxy(object):
         # acknowledged, let's give it some time to die in peace
         time.sleep(0.1)
     except (TimeoutError, ProxyError):
-      logging.info('Termination request not acknowledged, killing gdb.')
+      logging.debug('Termination request not acknowledged, killing gdb.')
     if self.is_running:
       # death pill didn't seem to work. We don't want the inferior to get killed
       # the next time it hits a dangling breakpoint, so we send a SIGINT to gdb,
@@ -524,6 +525,7 @@ class Inferior(object):
     if path:
       self._symbol_file = path
     s_path = self._symbol_file or _SymbolFilePath()
+    logging.debug('Trying to load symbol file: %s' % s_path)
     if self.attached:
       self.gdb.LoadSymbolFile(self.position, s_path)
       if not self.gdb.IsSymbolFileSane(self.position):
@@ -582,6 +584,7 @@ class Inferior(object):
     except OSError as err:
       # We might (for whatever reason) simply not be permitted to do this.
       if err.errno == errno.EPERM:
+        logging.debug('Reveived EPERM when trying to signal inferior.')
         return True
       return False
 

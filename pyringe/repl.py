@@ -75,6 +75,7 @@ class DebuggingConsole(code.InteractiveConsole):
                      'attach': self.Attach,
                      'detach': self.Detach,
                      'setarch': self.SetArchitecture,
+                     'setloglevel': self.SetLogLevel,
                      'loadplugin': self.LoadCommandPlugin,
                      'quit': self.Quit,
                     }
@@ -136,8 +137,10 @@ class DebuggingConsole(code.InteractiveConsole):
           threadnum = len(self.inferior.threads)
         except (inferior.ProxyError,
                 inferior.TimeoutError,
-                inferior.PositionError):
+                inferior.PositionError) as err:
           # This is not the kind of thing we want to be held up by
+          logging.debug('Error while getting information in status line:%s'
+                        % err.message)
           pass
     status = ('==> pid:[%s] #threads:[%s] current thread:[%s]' %
               (pid, threadnum, curthread))
@@ -174,6 +177,12 @@ class DebuggingConsole(code.InteractiveConsole):
       arch: The target architecture to set gdb to.
     """
     self.inferior.arch = arch
+
+  def SetLogLevel(self, level):
+    """Set log level. Corresponds to levels from logging module."""
+    # This is mostly here to jog people into enabling logging without
+    # requiring them to have looked at the pyringe code.
+    return logging.getLogger().setLevel(level)
 
   def runcode(self, co):
     try:
